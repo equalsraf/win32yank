@@ -1,0 +1,12 @@
+[package]
+name = "win32yank"
+version = "0.1.0"
+authors = ["raf"]
+
+[dependencies]
+docopt = "0.6"
+rustc-serialize = "0.3"
+clipboard-win = "1.7"
+winapi = "0.2"
+user32-sys = "0.1"
+kernel32-sys = "0.2"
