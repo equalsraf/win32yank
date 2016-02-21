@@ -1,0 +1,31 @@
+install:
+# Need Mingw to build C bits
+- SET PATH=%PATH%;C:\MinGW\bin
+- ps: Start-FileDownload http://static.rust-lang.org/dist/$env:PLATFORM -FileName rust.exe
+- rust.exe /VERYSILENT /NORESTART /DIR="C:\Program Files\Rust"
+- SET PATH=%PATH%;C:\Program Files\Rust\bin
+- rustc -vV
+- cargo -V
+- set RUST_BACKTRACE=1
+matrix:
+  fast_finish: true
+platform:
+# To build against multiple rust versions add them here
+- rust-1.6.0-x86_64-pc-windows-msvc.exe
+build_script:
+- contrib\appveyor-build.bat
+test_script:
+- contrib\appveyor-test.bat
+artifacts:
+- path: target/debug/win32yank.exe
+- path: target/release/win32yank.exe
+deploy:
+  - provider: GitHub
+    description: Automated builds (Appveyor)
+    release: $(appveyor_repo_tag_name)
+    auth_token:
+      secure: Hx2tU6GZPZNB6qGjHcIqa1tEm8fVGXZUVfXyjboVrPcmA9OWMTXhLxayDzMMl3kD
+    artifact: target/release/win32yank.exe
+    prerelease: false
+    on:
+      appveyor_repo_tag: true
