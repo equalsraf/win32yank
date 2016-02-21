@@ -5,7 +5,7 @@ extern crate winapi;
 extern crate user32;
 extern crate kernel32;
 
-use clipboard_win::{WindowsError, set_clipboard};
+use clipboard_win::WindowsError;
 use clipboard_win::wrapper::{get_last_error, open_clipboard, close_clipboard};
 use clipboard_win::clipboard_formats::CF_UNICODETEXT;
 use docopt::Docopt;
@@ -20,14 +20,14 @@ win32yank
 
 Usage:
     win32yank -o [--lf]
-    win32yank -i
+    win32yank -i [--crlf]
 
 Options:
     -o          Print clipboard contents to stdout
     -i          Set clipboard from stdin
     --lf        Replace CRLF with LF before printing to stdout
+    --crlf      Replace lone LF bytes with CRLF before setting the clipboard
 ";
-// TODO:    --crlf      Replace LF with CRLF before setting the clipboard
 
 #[derive(Debug, RustcDecodable)]
 struct Args {
@@ -76,6 +76,29 @@ fn get_clipboard(replace_crlf: bool) -> Result<String, WindowsError> {
     }
 }
 
+fn set_clipboard(content: &str, replace_lf: bool) -> Result<(), WindowsError> {
+    // clipboard_win::wrapper::set_clipboard uses CF_UNICODETEXT,
+    // which is what we want
+
+    if replace_lf {
+        let chunks = content.split("\r\n")
+            .map(|item| item.replace("\n", "\r\n"));
+        let mut first = true;
+        let mut out = String::with_capacity(content.len());
+        for chunk in chunks {
+            if first {
+                first = false;
+            } else {
+                out.push_str("\r\n");
+            }
+            out.push_str(&chunk);
+        }
+        clipboard_win::set_clipboard(&out)
+    } else {
+        clipboard_win::set_clipboard(content)
+    }
+}
+
 fn main() {
     let args: Args = Docopt::new(USAGE)
                             .and_then(|d| d.decode())
@@ -88,16 +111,9 @@ fn main() {
         let mut stdin = io::stdin();
         let mut content = String::new();
         stdin.read_to_string(&mut content).unwrap();
-// TODO
-//        if args.flag_crlf {
-//            content = content.split("\r\n")
-//                .map(|item| item.replace("\n", "\r\n"))
-//                .fold(String::new(), |acc, x| acc + "\r\n" + &x );
-//        }
-        set_clipboard(&content).unwrap();
+        set_clipboard(&content, args.flag_crlf).unwrap();
     }
 }
-
 
 #[test]
 fn test() {
@@ -108,27 +124,41 @@ fn test() {
     let sleep_time = 300;
 
     let v = "Hello\nfrom\nwin32yank";
-    set_clipboard(v).unwrap();
+    set_clipboard(v, false).unwrap();
     assert_eq!(get_clipboard(false).unwrap(), v);
     sleep(Duration::from_millis(sleep_time));
 
     let v = "Hello\rfrom\rwin32yank";
-    set_clipboard(v).unwrap();
+    set_clipboard(v, false).unwrap();
     assert_eq!(get_clipboard(false).unwrap(), v);
     sleep(Duration::from_millis(sleep_time));
 
     let v = "Hello\r\nfrom\r\nwin32yank";
-    set_clipboard(v).unwrap();
+    set_clipboard(v, false).unwrap();
     assert_eq!(get_clipboard(false).unwrap(), v);
     sleep(Duration::from_millis(sleep_time));
 
     let v = "\r\nfrom\r\nwin32yank\r\n\n...\\r\n";
-    set_clipboard(v).unwrap();
+    set_clipboard(v, false).unwrap();
     assert_eq!(get_clipboard(false).unwrap(), v);
     sleep(Duration::from_millis(sleep_time));
 
+    //
+    // set_clipboard(true)
+    set_clipboard("", true).unwrap();
+    assert_eq!(get_clipboard(false).unwrap(), "");
+    sleep(Duration::from_millis(sleep_time));
+
+    set_clipboard("\n", true).unwrap();
+    assert_eq!(get_clipboard(false).unwrap(), "\r\n");
+    sleep(Duration::from_millis(sleep_time));
+
+    set_clipboard("\r\n", true).unwrap();
+    assert_eq!(get_clipboard(false).unwrap(), "\r\n");
+    sleep(Duration::from_millis(sleep_time));
+
     let v = "\r\nfrom\r\nwin32yank\r\n\n...\\r\n";
-    set_clipboard(v).unwrap();
-    assert_eq!(get_clipboard(true).unwrap(),
-               "\nfrom\nwin32yank\n\n...\\r\n");
+    set_clipboard(v, true).unwrap();
+    assert_eq!(get_clipboard(false).unwrap(),
+               "\r\nfrom\r\nwin32yank\r\n\r\n...\\r\r\n");
 }
