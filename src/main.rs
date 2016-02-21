@@ -53,7 +53,7 @@ fn from_wide_ptr(ptr: *const u16) -> String {
     }
 }
 
-fn get_clipboard() -> Result<String, WindowsError> {
+fn get_clipboard(replace_crlf: bool) -> Result<String, WindowsError> {
     let result: Result<String, WindowsError>;
     try!(open_clipboard());
     unsafe {
@@ -68,7 +68,12 @@ fn get_clipboard() -> Result<String, WindowsError> {
         }
     }
     try!(close_clipboard());
-    result
+
+    if replace_crlf {
+        result.map(|data| data.replace("\r\n", "\n"))
+    } else {
+        result
+    }
 }
 
 fn main() {
@@ -77,10 +82,7 @@ fn main() {
                             .unwrap_or_else(|e| e.exit());
 
     if args.flag_o {
-        let mut content = get_clipboard().unwrap();
-        if args.flag_lf {
-            content = content.replace("\r\n", "\n");
-        }
+        let content = get_clipboard(args.flag_lf).unwrap();
         println!("{}", content);
     } else if args.flag_i {
         let mut stdin = io::stdin();
@@ -107,20 +109,26 @@ fn test() {
 
     let v = "Hello\nfrom\nwin32yank";
     set_clipboard(v).unwrap();
-    assert_eq!(get_clipboard().unwrap(), v);
+    assert_eq!(get_clipboard(false).unwrap(), v);
     sleep(Duration::from_millis(sleep_time));
 
     let v = "Hello\rfrom\rwin32yank";
     set_clipboard(v).unwrap();
-    assert_eq!(get_clipboard().unwrap(), v);
+    assert_eq!(get_clipboard(false).unwrap(), v);
     sleep(Duration::from_millis(sleep_time));
 
     let v = "Hello\r\nfrom\r\nwin32yank";
     set_clipboard(v).unwrap();
-    assert_eq!(get_clipboard().unwrap(), v);
+    assert_eq!(get_clipboard(false).unwrap(), v);
     sleep(Duration::from_millis(sleep_time));
 
     let v = "\r\nfrom\r\nwin32yank\r\n\n...\\r\n";
     set_clipboard(v).unwrap();
-    assert_eq!(get_clipboard().unwrap(), v);
+    assert_eq!(get_clipboard(false).unwrap(), v);
+    sleep(Duration::from_millis(sleep_time));
+
+    let v = "\r\nfrom\r\nwin32yank\r\n\n...\\r\n";
+    set_clipboard(v).unwrap();
+    assert_eq!(get_clipboard(true).unwrap(),
+               "\nfrom\nwin32yank\n\n...\\r\n");
 }
