@@ -106,7 +106,7 @@ fn main() {
 
     if args.flag_o {
         let content = get_clipboard(args.flag_lf).unwrap();
-        println!("{}", content);
+        print!("{}", content);
     } else if args.flag_i {
         let mut stdin = io::stdin();
         let mut content = String::new();
