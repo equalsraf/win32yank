@@ -11,7 +11,7 @@ use clipboard_win::clipboard_formats::CF_UNICODETEXT;
 use docopt::Docopt;
 use kernel32::{GlobalLock, GlobalUnlock};
 use winapi::winnt::HANDLE;
-use user32::GetClipboardData;
+use user32::{GetClipboardData, EnumClipboardFormats};
 use std::io;
 use std::io::Read;
 
@@ -56,6 +56,19 @@ fn from_wide_ptr(ptr: *const u16) -> String {
 fn get_clipboard(replace_crlf: bool) -> Result<String, WindowsError> {
     let result: Result<String, WindowsError>;
     try!(open_clipboard());
+
+    // Check clipboard contents, return empty string if unicode text
+    // is not available
+    let mut enumfmt = 0;
+    loop {
+        match unsafe {EnumClipboardFormats(enumfmt)} {
+            // Either the call failed or there are no more formats
+            0 => return Ok(String::new()),
+            v if v == CF_UNICODETEXT => break,
+            other => enumfmt = other,
+        }
+    }
+
     unsafe {
         let text_handler: HANDLE = GetClipboardData(CF_UNICODETEXT as u32);
 
