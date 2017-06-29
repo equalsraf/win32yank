@@ -1,7 +1,9 @@
+environment:
+    rustversion: 1.18.0
 install:
 # Need Mingw to build C bits
 - SET PATH=%PATH%;C:\MinGW\bin
-- ps: Start-FileDownload http://static.rust-lang.org/dist/$env:PLATFORM -FileName rust.exe
+- ps: Start-FileDownload http://static.rust-lang.org/dist/rust-$env:RUSTVERSION-$env:PLATFORM-pc-windows-msvc.exe -FileName rust.exe
 - rust.exe /VERYSILENT /NORESTART /DIR="C:\Program Files\Rust"
 - SET PATH=%PATH%;C:\Program Files\Rust\bin
 - rustc -vV
@@ -11,8 +13,8 @@ matrix:
   fast_finish: true
 platform:
 # To build against multiple rust versions add them here
-- rust-1.18.0-i686-pc-windows-msvc.exe
-- rust-1.18.0-x86_64-pc-windows-msvc.exe
+- i686
+- x86_64
 build_script:
 - contrib\appveyor-build.bat
 after_build:
