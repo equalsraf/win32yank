@@ -4,8 +4,9 @@ extern crate rustc_serialize;
 extern crate winapi;
 extern crate user32;
 extern crate kernel32;
+extern crate windows_error;
 
-use clipboard_win::WindowsError;
+use windows_error::WindowsError;
 use clipboard_win::wrapper::{get_last_error, open_clipboard, close_clipboard};
 use clipboard_win::clipboard_formats::CF_UNICODETEXT;
 use docopt::Docopt;
