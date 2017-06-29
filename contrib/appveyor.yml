@@ -20,8 +20,6 @@ after_build:
 test_script:
 - contrib\appveyor-test.bat
 artifacts:
-- path: target/debug/win32yank.exe
-- path: target/release/win32yank.exe
 - path: 'win32yank*.zip'
 deploy:
   - provider: GitHub
@@ -29,7 +27,7 @@ deploy:
     release: $(appveyor_repo_tag_name)
     auth_token:
       secure: 6DIGIaUcNLpxZI/1S3nmdnHIpn53fgSkjmdPtAZBcZSRQafqMh6TMPLymicqw/Mh 
-    artifact: 'win32yank*.zip'
+    artifact: /.*\.zip/ 
     prerelease: false
     on:
       appveyor_repo_tag: true
