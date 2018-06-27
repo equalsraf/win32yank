@@ -113,6 +113,17 @@ fn set_clipboard(content: &str, replace_lf: bool) -> Result<(), WindowsError> {
     }
 }
 
+fn convert_input(data: Vec<u8>) -> String {
+    match String::from_utf8(data) {
+        Ok(s) => s,
+        Err(err) => {
+            OsStr::new(err.as_bytes())
+                .to_os_string()
+                .into_string().unwrap()
+        }
+    }
+}
+
 fn main() {
     let args: Args = Docopt::new(USAGE)
                             .and_then(|d| d.decode())
@@ -123,8 +134,9 @@ fn main() {
         print!("{}", content);
     } else if args.flag_i {
         let mut stdin = io::stdin();
-        let mut content = String::new();
-        stdin.read_to_string(&mut content).unwrap();
+        let mut content = Vec::new();
+        stdin.read_to_end(&mut content).unwrap();
+        let content = convert_input(content);
         set_clipboard(&content, args.flag_crlf).unwrap();
     }
 }
