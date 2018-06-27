@@ -15,6 +15,9 @@ use winapi::winnt::HANDLE;
 use user32::{GetClipboardData, EnumClipboardFormats};
 use std::io;
 use std::io::Read;
+use std::ffi::{OsString, OsStr};
+use std::os::windows::ffi::OsStringExt;
+
 
 const USAGE: &'static str = "
 win32yank
@@ -39,9 +42,6 @@ struct Args {
 }
 
 fn from_wide_ptr(ptr: *const u16) -> String {
-    use std::ffi::{OsString, OsStr};
-    use std::os::windows::ffi::OsStringExt;
-
     if ptr.is_null() {
         return String::new();
     }
