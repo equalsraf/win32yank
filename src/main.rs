@@ -117,7 +117,8 @@ fn convert_input(data: Vec<u8>) -> String {
     match String::from_utf8(data) {
         Ok(s) => s,
         Err(err) => {
-            OsStr::new(err.as_bytes())
+            let data = err.into_bytes();
+            OsStr::new(&data)
                 .to_os_string()
                 .into_string().unwrap()
         }
