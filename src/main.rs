@@ -15,6 +15,9 @@ use winapi::winnt::HANDLE;
 use user32::{GetClipboardData, EnumClipboardFormats};
 use std::io;
 use std::io::Read;
+use std::ffi::{OsString, OsStr};
+use std::os::windows::ffi::OsStringExt;
+
 
 const USAGE: &'static str = "
 win32yank
@@ -39,9 +42,6 @@ struct Args {
 }
 
 fn from_wide_ptr(ptr: *const u16) -> String {
-    use std::ffi::OsString;
-    use std::os::windows::ffi::OsStringExt;
-
     if ptr.is_null() {
         return String::new();
     }
@@ -113,6 +113,18 @@ fn set_clipboard(content: &str, replace_lf: bool) -> Result<(), WindowsError> {
     }
 }
 
+fn convert_input(data: Vec<u8>) -> String {
+    match String::from_utf8(data) {
+        Ok(s) => s,
+        Err(err) => {
+            let data = err.into_bytes();
+            OsStr::new(&data)
+                .to_os_string()
+                .into_string().unwrap()
+        }
+    }
+}
+
 fn main() {
     let args: Args = Docopt::new(USAGE)
                             .and_then(|d| d.decode())
@@ -123,8 +135,9 @@ fn main() {
         print!("{}", content);
     } else if args.flag_i {
         let mut stdin = io::stdin();
-        let mut content = String::new();
-        stdin.read_to_string(&mut content).unwrap();
+        let mut content = Vec::new();
+        stdin.read_to_end(&mut content).unwrap();
+        let content = convert_input(content);
         set_clipboard(&content, args.flag_crlf).unwrap();
     }
 }
