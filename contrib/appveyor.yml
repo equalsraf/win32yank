@@ -1,5 +1,5 @@
 environment:
-    rustversion: 1.18.0
+    rustversion: 1.37.0
 install:
 # Need Mingw to build C bits
 - SET PATH=%PATH%;C:\MinGW\bin
