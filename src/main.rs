@@ -1,6 +1,6 @@
 extern crate clipboard_win;
 extern crate docopt;
-extern crate rustc_serialize;
+extern crate serde;
 extern crate winapi;
 extern crate user32;
 extern crate kernel32;
@@ -10,6 +10,7 @@ use windows_error::WindowsError;
 use clipboard_win::wrapper::{get_last_error, open_clipboard, close_clipboard};
 use clipboard_win::clipboard_formats::CF_UNICODETEXT;
 use docopt::Docopt;
+use serde::Deserialize;
 use kernel32::{GlobalLock, GlobalUnlock};
 use winapi::winnt::HANDLE;
 use user32::{GetClipboardData, EnumClipboardFormats};
@@ -30,7 +31,7 @@ Options:
     --crlf      Replace lone LF bytes with CRLF before setting the clipboard
 ";
 
-#[derive(Debug, RustcDecodable)]
+#[derive(Debug, Deserialize)]
 struct Args {
     flag_o: bool,
     flag_i: bool,
@@ -115,7 +116,7 @@ fn set_clipboard(content: &str, replace_lf: bool) -> Result<(), WindowsError> {
 
 fn main() {
     let args: Args = Docopt::new(USAGE)
-                            .and_then(|d| d.decode())
+                            .and_then(|d| d.deserialize())
                             .unwrap_or_else(|e| e.exit());
 
     if args.flag_o {
