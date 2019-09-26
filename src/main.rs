@@ -1,7 +1,6 @@
 extern crate clipboard_win;
 extern crate docopt;
 extern crate serde;
-extern crate winapi;
 extern crate user32;
 extern crate kernel32;
 extern crate windows_error;
@@ -12,7 +11,6 @@ use clipboard_win::clipboard_formats::CF_UNICODETEXT;
 use docopt::Docopt;
 use serde::Deserialize;
 use kernel32::{GlobalLock, GlobalUnlock};
-use winapi::winnt::HANDLE;
 use user32::{GetClipboardData, EnumClipboardFormats};
 use std::io;
 use std::io::Read;
@@ -72,7 +70,7 @@ fn get_clipboard(replace_crlf: bool) -> Result<String, WindowsError> {
     }
 
     unsafe {
-        let text_handler: HANDLE = GetClipboardData(CF_UNICODETEXT as u32);
+        let text_handler = GetClipboardData(CF_UNICODETEXT as u32);
 
         if text_handler.is_null() {
             result = Err(get_last_error());
