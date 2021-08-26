@@ -3,7 +3,7 @@ environment:
 install:
 # Need Mingw to build C bits
 - SET PATH=%PATH%;C:\MinGW\bin
-- ps: Start-FileDownload http://static.rust-lang.org/dist/rust-$env:RUSTVERSION-$env:PLATFORM-pc-windows-msvc.exe -FileName rust.exe
+- ps: Start-FileDownload http://static.rust-lang.org/dist/rust-$env:RUSTVERSION-$env:PLATFORM-pc-windows-msvc.msi -FileName rust.exe
 - rust.exe /VERYSILENT /NORESTART /DIR="C:\Program Files\Rust"
 - SET PATH=%PATH%;C:\Program Files\Rust\bin
 - rustc -vV
