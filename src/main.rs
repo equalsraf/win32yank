@@ -1,7 +1,6 @@
 extern crate clipboard_win;
 extern crate docopt;
-extern crate rustc_serialize;
-extern crate winapi;
+extern crate serde;
 extern crate user32;
 extern crate kernel32;
 extern crate windows_error;
@@ -10,8 +9,8 @@ use windows_error::WindowsError;
 use clipboard_win::wrapper::{get_last_error, open_clipboard, close_clipboard};
 use clipboard_win::clipboard_formats::CF_UNICODETEXT;
 use docopt::Docopt;
+use serde::Deserialize;
 use kernel32::{GlobalLock, GlobalUnlock};
-use winapi::winnt::HANDLE;
 use user32::{GetClipboardData, EnumClipboardFormats};
 use std::io;
 use std::io::Read;
@@ -30,7 +29,7 @@ Options:
     --crlf      Replace lone LF bytes with CRLF before setting the clipboard
 ";
 
-#[derive(Debug, RustcDecodable)]
+#[derive(Debug, Deserialize)]
 struct Args {
     flag_o: bool,
     flag_i: bool,
@@ -56,7 +55,7 @@ fn from_wide_ptr(ptr: *const u16) -> String {
 
 fn get_clipboard(replace_crlf: bool) -> Result<String, WindowsError> {
     let result: Result<String, WindowsError>;
-    try!(open_clipboard());
+    open_clipboard()?;
 
     // Check clipboard contents, return empty string if unicode text
     // is not available
@@ -71,7 +70,7 @@ fn get_clipboard(replace_crlf: bool) -> Result<String, WindowsError> {
     }
 
     unsafe {
-        let text_handler: HANDLE = GetClipboardData(CF_UNICODETEXT as u32);
+        let text_handler = GetClipboardData(CF_UNICODETEXT as u32);
 
         if text_handler.is_null() {
             result = Err(get_last_error());
@@ -81,7 +80,7 @@ fn get_clipboard(replace_crlf: bool) -> Result<String, WindowsError> {
             GlobalUnlock(text_handler);
         }
     }
-    try!(close_clipboard());
+    close_clipboard()?;
 
     if replace_crlf {
         result.map(|data| data.replace("\r\n", "\n"))
@@ -115,7 +114,7 @@ fn set_clipboard(content: &str, replace_lf: bool) -> Result<(), WindowsError> {
 
 fn main() {
     let args: Args = Docopt::new(USAGE)
-                            .and_then(|d| d.decode())
+                            .and_then(|d| d.deserialize())
                             .unwrap_or_else(|e| e.exit());
 
     if args.flag_o {

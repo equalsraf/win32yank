@@ -2,12 +2,12 @@
 name = "win32yank"
 version = "0.1.0"
 authors = ["raf"]
+edition = "2018"
 
 [dependencies]
-docopt = "0.6"
-rustc-serialize = "0.3"
+docopt = "1.1.0"
+serde = { version = "1", features = ["derive"] }
 clipboard-win = "1.7"
-winapi = "0.2"
 user32-sys = "0.2"
 kernel32-sys = "0.2"
 windows-error = "1.0"

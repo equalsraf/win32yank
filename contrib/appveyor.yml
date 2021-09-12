@@ -1,20 +1,27 @@
 environment:
-    rustversion: 1.18.0
+    rustversion: 1.55.0
+    matrix:
+            - platform: x86_64
+              rusthash: 1608A48C5C20A72CCF7037EB4B1A860B1DC51662F8BED42DF160779A9873B40B
+            - platform: i686
+              rusthash: A24EBB5D11280BC7A17DF7D8FBC2B73280AB5501AE3DBE997AC208A45A1BE072
 install:
 # Need Mingw to build C bits
 - SET PATH=%PATH%;C:\MinGW\bin
-- ps: Start-FileDownload http://static.rust-lang.org/dist/rust-$env:RUSTVERSION-$env:PLATFORM-pc-windows-msvc.exe -FileName rust.exe
-- rust.exe /VERYSILENT /NORESTART /DIR="C:\Program Files\Rust"
-- SET PATH=%PATH%;C:\Program Files\Rust\bin
+- ps: Start-FileDownload https://static.rust-lang.org/dist/rust-$env:RUSTVERSION-$env:PLATFORM-pc-windows-msvc.msi -FileName rust.msi
+- ps: |
+        $h = (Get-FileHash rust.msi).Hash
+        if ($h -ne $env:rusthash) {
+                throw "Hash mismatch while downloading Rust"
+        }
+- msiexec /passive /i rust.msi ADDLOCAL=Rustc,Cargo,Std INSTALLDIR=C:\Rust
+- start /wait msiexec /i rust.msi INSTALLDIR="C:\Program Files\Rust" /quiet /qn /norestart /log install.log
+- SET PATH=%PATH%;C:\Rust\bin
 - rustc -vV
 - cargo -V
 - set RUST_BACKTRACE=1
 matrix:
   fast_finish: true
-platform:
-# To build against multiple rust versions add them here
-- i686
-- x86_64
 build_script:
 - contrib\appveyor-build.bat
 after_build:
