@@ -55,7 +55,7 @@ fn from_wide_ptr(ptr: *const u16) -> String {
 
 fn get_clipboard(replace_crlf: bool) -> Result<String, WindowsError> {
     let result: Result<String, WindowsError>;
-    try!(open_clipboard());
+    open_clipboard()?;
 
     // Check clipboard contents, return empty string if unicode text
     // is not available
@@ -80,7 +80,7 @@ fn get_clipboard(replace_crlf: bool) -> Result<String, WindowsError> {
             GlobalUnlock(text_handler);
         }
     }
-    try!(close_clipboard());
+    close_clipboard()?;
 
     if replace_crlf {
         result.map(|data| data.replace("\r\n", "\n"))

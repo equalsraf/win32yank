@@ -2,6 +2,7 @@
 name = "win32yank"
 version = "0.1.0"
 authors = ["raf"]
+edition = "2018"
 
 [dependencies]
 docopt = "1.1.0"
