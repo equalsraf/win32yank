@@ -1,16 +1,17 @@
 environment:
-    rustversion: 1.55.0
+    rustversion: 1.67.0
     matrix:
             - platform: x86_64
-              rusthash: 1608A48C5C20A72CCF7037EB4B1A860B1DC51662F8BED42DF160779A9873B40B
+              rusthash: 57785F84901A45BF5168A9EB3451AD9E5BA1A9F0C7A928916879A21EE97A6706
             - platform: i686
-              rusthash: A24EBB5D11280BC7A17DF7D8FBC2B73280AB5501AE3DBE997AC208A45A1BE072
+              rusthash: AD12F16615CD31A787247174B6FE0BD3607C6C7063992C2F9101736CCCAA1B04
 install:
 # Need Mingw to build C bits
 - SET PATH=%PATH%;C:\MinGW\bin
 - ps: Start-FileDownload https://static.rust-lang.org/dist/rust-$env:RUSTVERSION-$env:PLATFORM-pc-windows-msvc.msi -FileName rust.msi
 - ps: |
         $h = (Get-FileHash rust.msi).Hash
+        echo $h
         if ($h -ne $env:rusthash) {
                 throw "Hash mismatch while downloading Rust"
         }
