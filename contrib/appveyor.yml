@@ -36,7 +36,7 @@ deploy:
     description: Automated builds (Appveyor)
     release: $(appveyor_repo_tag_name)
     auth_token:
-      secure: EC3hRzfCyV2DwNDMFWvk1XPWbksmDH6Lg8lS5O0ejW0O0MnOVSvnzMX7V9yiJpw5ABe+jSM/6rTGSBsNwqsW3csDc6gguM6rledfBZ7IMRgEy0eaFmCP2wicVGJ3GDP7
+      secure: EC3hRzfCyV2DwNDMFWvk1cfV/0cKjW60Jb1C0VP4sCT5j2ePf22h5XVEzpSmsvRcF/LBbniN8Y/AUgHBVg9uSogM0ioX9mdFurMRKG2hlOGN85NZLziCAojQs/5ZCYC6
     artifact: /.*\.zip/ 
     prerelease: false
     on:
