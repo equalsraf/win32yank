@@ -2,9 +2,9 @@
 name = "win32yank"
 version = "0.1.0"
 authors = ["raf"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
-docopt = "1.1.0"
-serde = { version = "1", features = ["derive"] }
-clipboard-win = "4"
+docopt = "1.1"
+serde = { version = "1.0", features = ["derive"] }
+clipboard-win = "5.4"

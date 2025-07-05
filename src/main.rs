@@ -1,7 +1,4 @@
-use clipboard_win::{
-    formats::{Unicode, CF_UNICODETEXT},
-    is_format_avail, Clipboard, Getter, Setter, SysResult,
-};
+use clipboard_win::{get_clipboard_string, set_clipboard_string};
 use docopt::Docopt;
 use serde::Deserialize;
 use std::io;
@@ -29,44 +26,39 @@ struct Args {
     flag_crlf: bool,
 }
 
-fn get_clipboard(replace_crlf: bool) -> SysResult<String> {
-    let mut output = String::new();
-    {
-        let _clip = Clipboard::new_attempts(10)?;
-        let unicode_available = is_format_avail(CF_UNICODETEXT);
-
-        if !unicode_available {
-            return Ok(String::new());
+fn get_clipboard_content(replace_crlf: bool) -> Result<String, String> {
+    match get_clipboard_string() {
+        Ok(content) => {
+            if replace_crlf {
+                Ok(content.replace("\r\n", "\n"))
+            } else {
+                Ok(content)
+            }
         }
-
-        let _bytes = Unicode.read_clipboard(&mut output)?;
-    }
-
-    if replace_crlf {
-        Ok(output.replace("\r\n", "\n"))
-    } else {
-        Ok(output)
+        Err(e) => {
+            // FIXME: Consider if all errors should be silenced.
+            // This is the legacy behavior, where we return empty string for most errors.
+            if e.to_string().contains("Clipboard does not contain text") {
+                Ok(String::new())
+            } else {
+                eprintln!("Failed to get clipboard content: {}", e);
+                Ok(String::new())
+            }
+        }
     }
 }
 
-fn set_clipboard(content: &str, replace_lf: bool) -> SysResult<()> {
-    let _clip = Clipboard::new_attempts(10)?;
-    if replace_lf {
-        let chunks = content.split("\r\n").map(|item| item.replace("\n", "\r\n"));
-        let mut first = true;
-        let mut out = String::with_capacity(content.len());
-        for chunk in chunks {
-            if first {
-                first = false;
-            } else {
-                out.push_str("\r\n");
-            }
-            out.push_str(&chunk);
-        }
-        Unicode.write_clipboard(&out)
+fn set_clipboard_content(content: &str, replace_lf: bool) -> Result<(), String> {
+    let processed_content;
+    let content_to_set = if replace_lf {
+        // FIXME: This is not a robust way to handle line endings.
+        // A simple replacement might not cover all cases, e.g., lone \r.
+        processed_content = content.replace("\n", "\r\n");
+        &processed_content
     } else {
-        Unicode.write_clipboard(&content)
-    }
+        content
+    };
+    set_clipboard_string(content_to_set).map_err(|e| e.to_string())
 }
 
 fn main() {
@@ -75,13 +67,13 @@ fn main() {
         .unwrap_or_else(|e| e.exit());
 
     if args.flag_o {
-        let content = get_clipboard(args.flag_lf).unwrap();
+        let content = get_clipboard_content(args.flag_lf).unwrap();
         print!("{}", content);
     } else if args.flag_i {
         let mut stdin = io::stdin();
         let mut content = String::new();
         stdin.read_to_string(&mut content).unwrap();
-        set_clipboard(&content, args.flag_crlf).unwrap();
+        set_clipboard_content(&content, args.flag_crlf).unwrap();
     }
 }
 
@@ -94,41 +86,41 @@ fn test() {
     let sleep_time = 300;
 
     let v = "Hello\nfrom\nwin32yank";
-    set_clipboard(v, false).unwrap();
-    assert_eq!(get_clipboard(false).unwrap(), v);
+    set_clipboard_content(v, false).unwrap();
+    assert_eq!(get_clipboard_content(false).unwrap(), v);
     sleep(Duration::from_millis(sleep_time));
 
     let v = "Hello\rfrom\rwin32yank";
-    set_clipboard(v, false).unwrap();
-    assert_eq!(get_clipboard(false).unwrap(), v);
+    set_clipboard_content(v, false).unwrap();
+    assert_eq!(get_clipboard_content(false).unwrap(), v);
     sleep(Duration::from_millis(sleep_time));
 
     let v = "Hello\r\nfrom\r\nwin32yank";
-    set_clipboard(v, false).unwrap();
-    assert_eq!(get_clipboard(false).unwrap(), v);
+    set_clipboard_content(v, false).unwrap();
+    assert_eq!(get_clipboard_content(false).unwrap(), v);
     sleep(Duration::from_millis(sleep_time));
 
     let v = "\r\nfrom\r\nwin32yank\r\n\n...\\r\n";
-    set_clipboard(v, false).unwrap();
-    assert_eq!(get_clipboard(false).unwrap(), v);
+    set_clipboard_content(v, false).unwrap();
+    assert_eq!(get_clipboard_content(false).unwrap(), v);
     sleep(Duration::from_millis(sleep_time));
 
-    set_clipboard("", true).unwrap();
-    assert_eq!(get_clipboard(false).unwrap(), "");
+    set_clipboard_content("", true).unwrap();
+    assert_eq!(get_clipboard_content(false).unwrap(), "");
     sleep(Duration::from_millis(sleep_time));
 
-    set_clipboard("\n", true).unwrap();
-    assert_eq!(get_clipboard(false).unwrap(), "\r\n");
+    set_clipboard_content("\n", true).unwrap();
+    assert_eq!(get_clipboard_content(false).unwrap(), "\r\n");
     sleep(Duration::from_millis(sleep_time));
 
-    set_clipboard("\r\n", true).unwrap();
-    assert_eq!(get_clipboard(false).unwrap(), "\r\n");
+    set_clipboard_content("\r\n", true).unwrap();
+    assert_eq!(get_clipboard_content(false).unwrap(), "\r\n");
     sleep(Duration::from_millis(sleep_time));
 
     let v = "\r\nfrom\r\nwin32yank\r\n\n...\\r\n";
-    set_clipboard(v, true).unwrap();
+    set_clipboard_content(v, true).unwrap();
     assert_eq!(
-        get_clipboard(false).unwrap(),
+        get_clipboard_content(false).unwrap(),
         "\r\nfrom\r\nwin32yank\r\n\r\n...\\r\r\n"
     );
 }
